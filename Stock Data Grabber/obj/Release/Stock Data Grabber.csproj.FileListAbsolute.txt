@@ -1,0 +1,13 @@
+C:\Users\Christian Loth\source\repos\ML.NET Apps\Stock Data Grabber\Stock Data Grabber\bin\Release\Stock Data Grabber.exe.config
+C:\Users\Christian Loth\source\repos\ML.NET Apps\Stock Data Grabber\Stock Data Grabber\bin\Release\Stock Data Grabber.exe
+C:\Users\Christian Loth\source\repos\ML.NET Apps\Stock Data Grabber\Stock Data Grabber\bin\Release\Stock Data Grabber.pdb
+C:\Users\Christian Loth\source\repos\ML.NET Apps\Stock Data Grabber\Stock Data Grabber\bin\Release\HtmlAgilityPack.dll
+C:\Users\Christian Loth\source\repos\ML.NET Apps\Stock Data Grabber\Stock Data Grabber\bin\Release\HtmlAgilityPack.pdb
+C:\Users\Christian Loth\source\repos\ML.NET Apps\Stock Data Grabber\Stock Data Grabber\bin\Release\HtmlAgilityPack.xml
+C:\Users\Christian Loth\source\repos\ML.NET Apps\Stock Data Grabber\Stock Data Grabber\obj\Release\Stock_Data_Grabber.Form1.resources
+C:\Users\Christian Loth\source\repos\ML.NET Apps\Stock Data Grabber\Stock Data Grabber\obj\Release\Stock_Data_Grabber.Properties.Resources.resources
+C:\Users\Christian Loth\source\repos\ML.NET Apps\Stock Data Grabber\Stock Data Grabber\obj\Release\Stock Data Grabber.csproj.GenerateResource.cache
+C:\Users\Christian Loth\source\repos\ML.NET Apps\Stock Data Grabber\Stock Data Grabber\obj\Release\Stock Data Grabber.csproj.CoreCompileInputs.cache
+C:\Users\Christian Loth\source\repos\ML.NET Apps\Stock Data Grabber\Stock Data Grabber\obj\Release\Stock Data Grabber.csproj.CopyComplete
+C:\Users\Christian Loth\source\repos\ML.NET Apps\Stock Data Grabber\Stock Data Grabber\obj\Release\Stock Data Grabber.exe
+C:\Users\Christian Loth\source\repos\ML.NET Apps\Stock Data Grabber\Stock Data Grabber\obj\Release\Stock Data Grabber.pdb

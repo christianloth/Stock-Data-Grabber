@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27703.2035
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stock Data Grabber", "Stock Data Grabber\Stock Data Grabber.csproj", "{0C7C3EB2-A848-4303-A33E-DA3314BE716E}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0C7C3EB2-A848-4303-A33E-DA3314BE716E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0C7C3EB2-A848-4303-A33E-DA3314BE716E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0C7C3EB2-A848-4303-A33E-DA3314BE716E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0C7C3EB2-A848-4303-A33E-DA3314BE716E}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {27A5228F-463C-459A-9D75-B87FE137C128}
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,505 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using HtmlAgilityPack;
+
+namespace Stock_Data_Grabber {
+    class NumberSorter {
+        /*static void Main(string[] args) {
+            double[] arr = { 1, 2, 3, 4, 5, 6, 7, 8, 9.1, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20 };
+            int n = arr.Length;
+            int x = 9;
+            printKclosest(arr, x, 10, n);
+            Console.ReadLine();
+        }*/
+
+        double stockValue;
+        HtmlNode[][] updatedData = new HtmlNode[4][];
+
+        HtmlNode[][] columns;
+
+        public NumberSorter() {
+            stockValue = 0;
+        }
+        public NumberSorter(double stockValue) {
+            this.stockValue = stockValue;
+        }
+
+        public void rearrange(HtmlNode[] strikes, HtmlNode[] lastPrices, HtmlNode[] bids, HtmlNode[] asks) {
+            columns = new HtmlNode[4][] {
+                strikes,
+                lastPrices,
+                bids,
+                asks
+            };
+        }
+
+        // This function prints k closest elements 
+        // to x in arr[]. n is the number of 
+        // elements in arr[]
+        private void printKclosest(double[] arr, int x, int k, int n) {
+            //change arr[] to HtmlNode
+            //if the strikes value of html node meets all conditions, update all 'updated' variables to corrosponding values. Make sure that all of them have same index updated.
+
+            // Find the crossover point
+            int l = findCrossOver(arr, 0, n - 1, x);
+
+            // Right index to search
+            int r = l + 1;
+
+            // To keep track of count of elements
+            int count = 0;
+
+            // If x is present in arr[], then reduce 
+            // left index Assumption: all elements in
+            // arr[] are distinct
+            if (arr[l] == x)
+                l--;
+
+            // Compare elements on left and right of 
+            // crossover point to find the k closest
+            // elements
+            while (l >= 0 && r < n && count < k) {
+                if (x - arr[l] < arr[r] - x)
+                    Console.Write(arr[l--] + " ");
+                else
+                    Console.Write(arr[r++] + " ");
+                count++;
+            }
+
+            // If there are no more elements on right 
+            // side, then print left elements
+            while (count < k && l >= 0) {
+                Console.Write(arr[l--] + " ");
+                count++;
+            }
+
+            // If there are no more elements on left 
+            // side, then print right elements
+            while (count < k && r < n) {
+                Console.Write(arr[r++] + " ");
+                count++;
+            }
+        }
+        private int findCrossOver(double[] arr, int low, int high, int x) {
+            // Base cases
+            // x is greater than all
+            if (arr[high] <= x)
+                return high;
+
+            // x is smaller than all
+            if (arr[low] > x)
+                return low;
+
+            // Find the middle point
+            /* low + (high - low)/2 */
+            int mid = (low + high) / 2;
+
+            /* If x is same as middle element, then
+            return mid */
+            if (arr[mid] <= x && arr[mid + 1] > x)
+                return mid;
+
+            /* If x is greater than arr[mid], then 
+            either arr[mid + 1] is ceiling of x or
+            ceiling lies in arr[mid+1...high] */
+            if (arr[mid] < x)
+                return findCrossOver(arr, mid + 1,
+                                          high, x);
+
+            return findCrossOver(arr, low, mid - 1, x);
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using HtmlAgilityPack;
+
+namespace Stock_Data_Grabber {
+    public partial class Main : Form {
+        DataTable table;
+        HtmlWeb web;
+
+        HtmlNode[] strikesCall;
+        HtmlNode[] lastPricesCall;
+        HtmlNode[] bidsCall;
+        HtmlNode[] asksCall;
+
+        HtmlNode[] strikesPut;
+        HtmlNode[] lastPricesPut;
+        HtmlNode[] bidsPut;
+        HtmlNode[] asksPut;
+
+        string[] stockCodes;
+
+        public static int QUANTITY;
+
+        public Main() {
+            InitializeComponent();
+            initTable();
+        }
+        private void Form1_Load(object sender, EventArgs e) {
+            numStatments.Text = "10";
+            export.Enabled = false;
+        }
+        private void initTable() {
+            table = new DataTable("Stocks");
+            table.Columns.Add("Call / Put", typeof(string));
+            table.Columns.Add("Stock Symbol", typeof(string));
+            table.Columns.Add("Date and Time", typeof(string));
+            table.Columns.Add("Stock Price", typeof(double));
+            table.Columns.Add("Strike", typeof(double));
+            table.Columns.Add("Last Price", typeof(double));
+            table.Columns.Add("Bid", typeof(double));
+            table.Columns.Add("Ask", typeof(double));
+            dgv.DataSource = table;
+        }
+
+        private async void Refresh_Click(object sender, EventArgs e) {
+            Int32.TryParse(numStatments.Text, out QUANTITY);
+            // add FormatException
+            if ((QUANTITY <= 0)) {
+                MessageBox.Show("Please enter a positive number.",
+                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            for (int i = table.Rows.Count - 1; i >= 0; i--) {
+                DataRow dr = table.Rows[i];
+                dr.Delete();
+            }
+
+            try {
+                stockCodes = File.ReadAllLines(@"stocks.txt");
+            } catch (FileNotFoundException) {
+                MessageBox.Show("Please ensure that your stocks.txt file is in your files directory.",
+                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            int ii = 0;
+            foreach (string s in stockCodes) {
+                try {
+                    if (s == "" || s == null)
+                        continue;
+                    await Data(s);
+                } catch (NullReferenceException) {
+                    if (false) // Change to make work to not let unknown stock values through
+                        MessageBox.Show("Please ensure that all of your stock codes in stocks.txt are correct.",
+                         "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+                ii++;
+            }
+
+            export.Enabled = true;
+        }
+        private async Task Data(String stockCode) {
+
+            web = new HtmlWeb();
+
+            string url = "https://finance.yahoo.com/quote/" + stockCode.ToUpper() + "/options?p=#4dasda" + stockCode.ToUpper();
+
+            HtmlAgilityPack.HtmlDocument doc = null;
+            try {
+                doc = await Task.Factory.StartNew(() => web.Load(url));
+            } catch (WebException) {
+                MessageBox.Show("Please check your internet connection. You may not have connection or your IP may have made too many recent requests.",
+                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            strikesCall = new HtmlNode[QUANTITY];
+            lastPricesCall = new HtmlNode[QUANTITY];
+            bidsCall = new HtmlNode[QUANTITY];
+            asksCall = new HtmlNode[QUANTITY];
+
+            strikesPut = new HtmlNode[QUANTITY];
+            lastPricesPut = new HtmlNode[QUANTITY];
+            bidsPut = new HtmlNode[QUANTITY];
+            asksPut = new HtmlNode[QUANTITY];
+
+            string dateTime = doc.DocumentNode.SelectSingleNode("//*[@id='quote-market-notice']/span").InnerHtml;
+            double stockPrice = Convert.ToDouble(doc.DocumentNode.SelectSingleNode("//*[@id='quote-header-info']/div[3]/div[1]/div/span[1]").InnerHtml);
+
+            // Get nodes of different columns
+            for (int i = 0; i < QUANTITY; i++) {
+                int c = 1 + i;
+                strikesCall[i] = doc.DocumentNode.SelectSingleNode(
+                "//*[@id='Col1-1-OptionContracts-Proxy']/section/section[1]/div[2]/div/table/tbody/tr[" + c + "]/td[3]/a");
+                lastPricesCall[i] = doc.DocumentNode.SelectSingleNode(
+                "//*[@id='Col1-1-OptionContracts-Proxy']/section/section[1]/div[2]/div/table/tbody/tr[" + c + "]/td[4]");
+                bidsCall[i] = doc.DocumentNode.SelectSingleNode(
+                "//*[@id='Col1-1-OptionContracts-Proxy']/section/section[1]/div[2]/div/table/tbody/tr[" + c + "]/td[5]");
+                asksCall[i] = doc.DocumentNode.SelectSingleNode(
+                "//*[@id='Col1-1-OptionContracts-Proxy']/section/section[1]/div[2]/div/table/tbody/tr[" + c + "]/td[6]");
+
+                strikesPut[i] = doc.DocumentNode.SelectSingleNode(
+                "//*[@id='Col1-1-OptionContracts-Proxy']/section/section[2]/div[2]/div/table/tbody/tr[" + c + "]/td[3]/a");
+                lastPricesPut[i] = doc.DocumentNode.SelectSingleNode(
+                "//*[@id='Col1-1-OptionContracts-Proxy']/section/section[2]/div[2]/div/table/tbody/tr[" + c + "]/td[4]");
+                bidsPut[i] = doc.DocumentNode.SelectSingleNode(
+                "//*[@id='Col1-1-OptionContracts-Proxy']/section/section[2]/div[2]/div/table/tbody/tr[" + c + "]/td[5]");
+                asksPut[i] = doc.DocumentNode.SelectSingleNode(
+                "//*[@id='Col1-1-OptionContracts-Proxy']/section/section[2]/div[2]/div/table/tbody/tr[" + c + "]/td[6]");
+            }
+
+
+            // output calls data to table
+            for (int i = 0; i < QUANTITY; i++) {
+                table.Rows.Add("Call", stockCode.ToUpper(), dateTime, stockPrice, Convert.ToDouble(strikesCall[i].InnerHtml),
+                    Convert.ToDouble(lastPricesCall[i].InnerHtml), Convert.ToDouble(bidsCall[i].InnerHtml), Convert.ToDouble(asksCall[i].InnerHtml));
+            }
+
+            table.Rows.Add();
+
+            // output puts data to table
+            for (int i = 0; i < QUANTITY; i++) {
+                table.Rows.Add("Put", stockCode.ToUpper(), dateTime, stockPrice, Convert.ToDouble(strikesPut[i].InnerHtml),
+                    Convert.ToDouble(lastPricesPut[i].InnerHtml), Convert.ToDouble(bidsPut[i].InnerHtml), Convert.ToDouble(asksPut[i].InnerHtml));
+            }
+
+            table.Rows.Add();
+        }
+        // export data to excel
+        private void exportData() {
+            var lines = new List<string>();
+
+            string[] columnNames = table.Columns.Cast<DataColumn>().Select(column => column.ColumnName).ToArray();
+
+            var header = string.Join(",", columnNames);
+            lines.Add(header);
+
+            var valueLines = table.AsEnumerable().Select(row => string.Join(",", row.ItemArray));
+            lines.AddRange(valueLines);
+
+            File.WriteAllLines("Stock Data.csv", lines);
+        }
+
+        private void Export_Click(object sender, EventArgs e) {
+            try {
+                exportData();
+                MessageBox.Show("File successfully exported as: Stock Data.csv");
+            } catch {
+                MessageBox.Show("File could not be exported.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using HtmlAgilityPack;
+
+namespace Stock_Data_Grabber {
+    public partial class Main : Form {
+        DataTable table;
+        HtmlWeb web;
+
+        List<double> strikesCall = new List<double>();
+        List<double> lastPricesCall = new List<double>();
+        List<double> bidsCall = new List<double>();
+        List<double> asksCall = new List<double>();
+
+        List<double> strikesPut = new List<double>();
+        List<double> lastPricesPut = new List<double>();
+        List<double> bidsPut = new List<double>();
+        List<double> asksPut = new List<double>();
+
+        string[] stockCodes;
+
+        public static int QUANTITY;
+
+        public Main() {
+            InitializeComponent();
+            initTable();
+        }
+        private void Form1_Load(object sender, EventArgs e) {
+            numStatments.Text = "10";
+            export.Enabled = false;
+        }
+        private void initTable() {
+            table = new DataTable("Stocks");
+            table.Columns.Add("Call / Put", typeof(string));
+            table.Columns.Add("Stock Symbol", typeof(string));
+            table.Columns.Add("Date and Time", typeof(string));
+            table.Columns.Add("Stock Price", typeof(double));
+            table.Columns.Add("Strike", typeof(double));
+            table.Columns.Add("Last Price", typeof(double));
+            table.Columns.Add("Bid", typeof(double));
+            table.Columns.Add("Ask", typeof(double));
+            dgv.DataSource = table;
+        }
+
+        private async void Refresh_Click(object sender, EventArgs e) {
+            Int32.TryParse(numStatments.Text, out QUANTITY);
+            // add FormatException
+            if (QUANTITY <= 0) {
+                MessageBox.Show("Please enter a positive number.",
+                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            for (int i = table.Rows.Count - 1; i >= 0; i--) {
+                DataRow dr = table.Rows[i];
+                dr.Delete();
+            }
+
+            try {
+                stockCodes = File.ReadAllLines(@"stocks.txt");
+            } catch (FileNotFoundException) {
+                MessageBox.Show("Please ensure that your stocks.txt file is in your files directory.",
+                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            int ii = 0;
+            foreach (string s in stockCodes) {
+                try {
+                    if (s == "" || s == null)
+                        continue;
+                    await Data(s);
+                } catch (NullReferenceException) {
+                    if (false) // Change to make work to not let unknown stock values through
+                        MessageBox.Show("Please ensure that all of your stock codes in stocks.txt are correct.",
+                         "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+                ii++;
+            }
+
+            export.Enabled = true;
+        }
+        private async Task Data(String stockCode) {
+
+            web = new HtmlWeb();
+
+            string url = "https://finance.yahoo.com/quote/" + stockCode.ToUpper() + "/options?p=#4dasda" + stockCode.ToUpper();
+
+            HtmlAgilityPack.HtmlDocument doc = null;
+            try {
+                doc = await Task.Factory.StartNew(() => web.Load(url));
+            } catch (WebException) {
+                MessageBox.Show("Please check your internet connection. You may not have connection or your IP may have made too many recent requests.",
+                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            string dateTime = doc.DocumentNode.SelectSingleNode("//*[@id='quote-market-notice']/span").InnerHtml;
+            double stockPrice = Convert.ToDouble(doc.DocumentNode.SelectSingleNode("//*[@id='quote-header-info']/div[3]/div[1]/div/span[1]").InnerHtml);
+
+            // Get nodes of different columns
+            for (int i = 0; i < QUANTITY; i++) {
+                int c = 1 + i;
+                strikesCall.Add(Convert.ToDouble(doc.DocumentNode.SelectSingleNode(
+                "//*[@id='Col1-1-OptionContracts-Proxy']/section/section[1]/div[2]/div/table/tbody/tr[" + c + "]/td[3]/a").InnerHtml));
+                lastPricesCall.Add(Convert.ToDouble(doc.DocumentNode.SelectSingleNode(
+                "//*[@id='Col1-1-OptionContracts-Proxy']/section/section[1]/div[2]/div/table/tbody/tr[" + c + "]/td[4]").InnerHtml));
+                bidsCall.Add(Convert.ToDouble(doc.DocumentNode.SelectSingleNode(
+                "//*[@id='Col1-1-OptionContracts-Proxy']/section/section[1]/div[2]/div/table/tbody/tr[" + c + "]/td[5]").InnerHtml));
+                asksCall.Add(Convert.ToDouble(doc.DocumentNode.SelectSingleNode(
+                "//*[@id='Col1-1-OptionContracts-Proxy']/section/section[1]/div[2]/div/table/tbody/tr[" + c + "]/td[6]").InnerHtml));
+
+                strikesPut.Add(Convert.ToDouble(doc.DocumentNode.SelectSingleNode(
+                "//*[@id='Col1-1-OptionContracts-Proxy']/section/section[2]/div[2]/div/table/tbody/tr[" + c + "]/td[3]/a").InnerHtml));
+                lastPricesPut.Add(Convert.ToDouble(doc.DocumentNode.SelectSingleNode(
+                "//*[@id='Col1-1-OptionContracts-Proxy']/section/section[2]/div[2]/div/table/tbody/tr[" + c + "]/td[4]").InnerHtml));
+                bidsPut.Add(Convert.ToDouble(doc.DocumentNode.SelectSingleNode(
+                "//*[@id='Col1-1-OptionContracts-Proxy']/section/section[2]/div[2]/div/table/tbody/tr[" + c + "]/td[5]").InnerHtml));
+                asksPut.Add(Convert.ToDouble(doc.DocumentNode.SelectSingleNode(
+                "//*[@id='Col1-1-OptionContracts-Proxy']/section/section[2]/div[2]/div/table/tbody/tr[" + c + "]/td[6]").InnerHtml));
+            }
+
+            table.Rows.Add();
+
+
+            // output calls data to table
+            for (int i = 0; i < QUANTITY; i++) {
+                table.Rows.Add("Call", stockCode.ToUpper(), dateTime, stockPrice, Convert.ToDouble(strikesCall[i]),
+                    Convert.ToDouble(lastPricesCall[i]), Convert.ToDouble(bidsCall[i]), Convert.ToDouble(asksCall[i]));
+            }
+
+            table.Rows.Add();
+
+            // output puts data to table
+            for (int i = 0; i < QUANTITY; i++) {
+                table.Rows.Add("Put", stockCode.ToUpper(), dateTime, stockPrice, Convert.ToDouble(strikesPut[i]),
+                    Convert.ToDouble(lastPricesPut[i]), Convert.ToDouble(bidsPut[i]), Convert.ToDouble(asksPut[i]));
+            }
+
+            table.Rows.Add();
+        }
+        // export data to excel
+        private void exportData() {
+            var lines = new List<string>();
+
+            string[] columnNames = table.Columns.Cast<DataColumn>().Select(column => column.ColumnName).ToArray();
+
+            var header = string.Join(",", columnNames);
+            lines.Add(header);
+
+            var valueLines = table.AsEnumerable().Select(row => string.Join(",", row.ItemArray));
+            lines.AddRange(valueLines);
+
+            File.WriteAllLines("Stock Data.csv", lines);
+        }
+
+        private void Export_Click(object sender, EventArgs e) {
+            try {
+                exportData();
+                MessageBox.Show("File successfully exported as: Stock Data.csv");
+            } catch {
+                MessageBox.Show("File could not be exported.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+    }
+}
+
+
+
+
+
+
+
+
